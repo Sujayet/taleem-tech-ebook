@@ -1,3 +1,130 @@
-'use client'
-import Link from 'next/link'; import {BookOpen,Search} from 'lucide-react'; import {supabase,money} from '@/lib/supabase'
-export default async function Ebooks({searchParams}){const q=searchParams?.q||'',cat=searchParams?.category||'';let query=supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,pages,categories(id,name)').eq('active',true).order('created_at',{ascending:false}); if(q) query=query.ilike('title',`%${q}%`); const {data:products}=await query; const {data:cats}=await supabase.from('categories').select('id,name,slug').order('name'); const shown=cat?(products||[]).filter(p=>p.categories?.slug===cat):(products||[]);return <section className="section"><div className="container"><div className="pageTitle"><span className="eyebrow">CATALOGUE</span><h1>All E-Books</h1><p>Choose a guide and start learning today.</p></div><form className="filters"><div className="search"><Search size={18}/><input name="q" defaultValue={q} placeholder="Search e-books..."/></div><select name="category" defaultValue={cat}><option value="">All categories</option>{(cats||[]).map(c=><option key={c.id} value={c.slug}>{c.name}</option>)}</select><button className="btn primary">Search</button></form><div className="grid">{shown.map(p=><Link className="card" key={p.id} href={`/products/${p.slug}`}><div className="cover">{p.cover_url?<img src={p.cover_url} alt=""/>:<BookOpen size={42}/>}<span>{p.pages||'PDF'} pages</span></div><div className="cardBody"><small>{p.categories?.name}</small><h3>{p.title}</h3><p>{p.description||'Practical computer learning guide.'}</p><div className="price"><b>{money(p.price)}</b>{p.compare_at_price&&<del>{money(p.compare_at_price)}</del>}</div></div></Link>)}</div>{shown.length===0&&<div className="empty">No e-books found. Try another search.</div>}</div></section>}
+import Link from 'next/link'
+import { ArrowRight, BookOpen, CheckCircle2, Search, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { supabase, money } from '@/lib/supabase'
+
+export default async function Ebooks({ searchParams }) {
+  const q = searchParams?.q?.trim() || ''
+  const cat = searchParams?.category || ''
+
+  let query = supabase
+    .from('products')
+    .select('id,title,slug,description,price,compare_at_price,cover_url,pages,categories(id,name,slug)')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+
+  if (q) query = query.ilike('title', `%${q}%`)
+
+  const [{ data: products, error: productsError }, { data: cats }] = await Promise.all([
+    query,
+    supabase.from('categories').select('id,name,slug').order('name'),
+  ])
+
+  const books = products || []
+  const categories = cats || []
+  const getCategory = (product) => Array.isArray(product.categories) ? product.categories[0] : product.categories
+  const shown = cat ? books.filter((product) => getCategory(product)?.slug === cat) : books
+  const activeCategory = categories.find((category) => category.slug === cat)
+
+  return (
+    <section className="section ebooksPage">
+      <div className="container">
+        <div className="catalogHero">
+          <div className="catalogHeroCopy">
+            <span className="eyebrow"><Sparkles size={14} /> TALEEM TECH CATALOGUE</span>
+            <h1>Learn smarter.<br /><span>Build with confidence.</span></h1>
+            <p>Practical e-books designed to help students, beginners, and everyday computer users learn useful skills faster.</p>
+            <div className="catalogTrust">
+              <span><CheckCircle2 size={16} /> Instant digital access</span>
+              <span><CheckCircle2 size={16} /> Practical learning</span>
+              <span><CheckCircle2 size={16} /> Learn at your pace</span>
+            </div>
+          </div>
+          <div className="catalogHeroCard">
+            <div className="catalogHeroIcon"><BookOpen size={28} /></div>
+            <span>EXPLORE THE LIBRARY</span>
+            <strong>{books.length} {books.length === 1 ? 'e-book' : 'e-books'}</strong>
+            <p>Choose a topic, open the guide, and start learning today.</p>
+          </div>
+        </div>
+
+        <div className="catalogToolbar">
+          <div>
+            <span className="eyebrow">BROWSE COLLECTION</span>
+            <h2>{activeCategory ? activeCategory.name : 'All E-Books'}</h2>
+            <p>{shown.length} {shown.length === 1 ? 'title' : 'titles'} available</p>
+          </div>
+          <form className="catalogSearch" action="/ebooks">
+            <div className="search">
+              <Search size={18} />
+              <input name="q" defaultValue={q} placeholder="Search by e-book title..." aria-label="Search e-books" />
+            </div>
+            <select name="category" defaultValue={cat} aria-label="Filter by category">
+              <option value="">All categories</option>
+              {categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
+            </select>
+            <button className="btn primary" type="submit"><SlidersHorizontal size={16} /> Search</button>
+          </form>
+        </div>
+
+        {categories.length > 0 && (
+          <div className="categoryChips" aria-label="E-book categories">
+            <Link className={!cat ? 'active' : ''} href="/ebooks">All</Link>
+            {categories.map((category) => (
+              <Link key={category.id} className={cat === category.slug ? 'active' : ''} href={`/ebooks?category=${encodeURIComponent(category.slug)}`}>
+                {category.name}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {productsError ? (
+          <div className="empty catalogEmpty">
+            <BookOpen size={34} />
+            <h3>We couldn't load the catalogue.</h3>
+            <p>Please refresh the page and try again.</p>
+          </div>
+        ) : shown.length > 0 ? (
+          <div className="catalogGrid">
+            {shown.map((product) => {
+              const category = getCategory(product)
+              return (
+                <Link className="ebookCard" key={product.id} href={`/products/${product.slug}`}>
+                  <div className="ebookCover">
+                    {product.cover_url ? (
+                      <img src={product.cover_url} alt={`${product.title} cover`} />
+                    ) : (
+                      <div className="coverFallback"><BookOpen size={44} /><span>Taleem Tech</span></div>
+                    )}
+                    <span className="pageBadge">{product.pages ? `${product.pages} pages` : 'PDF'}</span>
+                    {product.compare_at_price && Number(product.compare_at_price) > Number(product.price) && (
+                      <span className="saleBadge">SPECIAL PRICE</span>
+                    )}
+                  </div>
+                  <div className="ebookBody">
+                    <div className="ebookMeta">
+                      <span>{category?.name || 'E-Book'}</span>
+                      <ArrowRight size={15} />
+                    </div>
+                    <h3>{product.title}</h3>
+                    <p>{product.description || 'Practical computer learning guide.'}</p>
+                    <div className="ebookFooter">
+                      <div className="price"><b>{money(product.price)}</b>{product.compare_at_price && <del>{money(product.compare_at_price)}</del>}</div>
+                      <span className="viewLink">View guide <ArrowRight size={15} /></span>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="empty catalogEmpty">
+            <Search size={34} />
+            <h3>No e-books found</h3>
+            <p>Try a different title or browse all categories.</p>
+            <Link className="btn primary" href="/ebooks">View all e-books</Link>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
