@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, BookOpen, CheckCircle2, Search, Sparkles, SlidersHorizontal } from 'lucide-react'
 import { supabase, money } from '@/lib/supabase'
+import styles from './ebooks.module.css'
 
 export default async function Ebooks({ searchParams }) {
   const q = searchParams?.q?.trim() || ''
@@ -26,34 +27,34 @@ export default async function Ebooks({ searchParams }) {
   const activeCategory = categories.find((category) => category.slug === cat)
 
   return (
-    <section className="section ebooksPage">
+    <section className={`${styles.page} section`}>
       <div className="container">
-        <div className="catalogHero">
-          <div className="catalogHeroCopy">
-            <span className="eyebrow"><Sparkles size={14} /> TALEEM TECH CATALOGUE</span>
+        <div className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}><Sparkles size={14} /> TALEEM TECH CATALOGUE</span>
             <h1>Learn smarter.<br /><span>Build with confidence.</span></h1>
             <p>Practical e-books designed to help students, beginners, and everyday computer users learn useful skills faster.</p>
-            <div className="catalogTrust">
+            <div className={styles.trust}>
               <span><CheckCircle2 size={16} /> Instant digital access</span>
               <span><CheckCircle2 size={16} /> Practical learning</span>
               <span><CheckCircle2 size={16} /> Learn at your pace</span>
             </div>
           </div>
-          <div className="catalogHeroCard">
-            <div className="catalogHeroIcon"><BookOpen size={28} /></div>
+          <div className={styles.heroCard}>
+            <div className={styles.heroIcon}><BookOpen size={28} /></div>
             <span>EXPLORE THE LIBRARY</span>
             <strong>{books.length} {books.length === 1 ? 'e-book' : 'e-books'}</strong>
             <p>Choose a topic, open the guide, and start learning today.</p>
           </div>
         </div>
 
-        <div className="catalogToolbar">
+        <div className={styles.toolbar}>
           <div>
-            <span className="eyebrow">BROWSE COLLECTION</span>
+            <span className={styles.eyebrow}>BROWSE COLLECTION</span>
             <h2>{activeCategory ? activeCategory.name : 'All E-Books'}</h2>
             <p>{shown.length} {shown.length === 1 ? 'title' : 'titles'} available</p>
           </div>
-          <form className="catalogSearch" action="/ebooks">
+          <form className={styles.searchForm} action="/ebooks">
             <div className="search">
               <Search size={18} />
               <input name="q" defaultValue={q} placeholder="Search by e-book title..." aria-label="Search e-books" />
@@ -67,10 +68,10 @@ export default async function Ebooks({ searchParams }) {
         </div>
 
         {categories.length > 0 && (
-          <div className="categoryChips" aria-label="E-book categories">
-            <Link className={!cat ? 'active' : ''} href="/ebooks">All</Link>
+          <div className={styles.chips} aria-label="E-book categories">
+            <Link className={!cat ? styles.active : ''} href="/ebooks">All</Link>
             {categories.map((category) => (
-              <Link key={category.id} className={cat === category.slug ? 'active' : ''} href={`/ebooks?category=${encodeURIComponent(category.slug)}`}>
+              <Link key={category.id} className={cat === category.slug ? styles.active : ''} href={`/ebooks?category=${encodeURIComponent(category.slug)}`}>
                 {category.name}
               </Link>
             ))}
@@ -78,38 +79,38 @@ export default async function Ebooks({ searchParams }) {
         )}
 
         {productsError ? (
-          <div className="empty catalogEmpty">
+          <div className={`empty ${styles.empty}`}>
             <BookOpen size={34} />
             <h3>We couldn't load the catalogue.</h3>
             <p>Please refresh the page and try again.</p>
           </div>
         ) : shown.length > 0 ? (
-          <div className="catalogGrid">
+          <div className={styles.grid}>
             {shown.map((product) => {
               const category = getCategory(product)
               return (
-                <Link className="ebookCard" key={product.id} href={`/products/${product.slug}`}>
-                  <div className="ebookCover">
+                <Link className={styles.card} key={product.id} href={`/products/${product.slug}`}>
+                  <div className={styles.cover}>
                     {product.cover_url ? (
                       <img src={product.cover_url} alt={`${product.title} cover`} />
                     ) : (
-                      <div className="coverFallback"><BookOpen size={44} /><span>Taleem Tech</span></div>
+                      <div className={styles.fallback}><BookOpen size={44} /><span>Taleem Tech</span></div>
                     )}
-                    <span className="pageBadge">{product.pages ? `${product.pages} pages` : 'PDF'}</span>
+                    <span className={styles.badge}>{product.pages ? `${product.pages} pages` : 'PDF'}</span>
                     {product.compare_at_price && Number(product.compare_at_price) > Number(product.price) && (
-                      <span className="saleBadge">SPECIAL PRICE</span>
+                      <span className={styles.sale}>SPECIAL PRICE</span>
                     )}
                   </div>
-                  <div className="ebookBody">
-                    <div className="ebookMeta">
+                  <div className={styles.body}>
+                    <div className={styles.meta}>
                       <span>{category?.name || 'E-Book'}</span>
                       <ArrowRight size={15} />
                     </div>
                     <h3>{product.title}</h3>
                     <p>{product.description || 'Practical computer learning guide.'}</p>
-                    <div className="ebookFooter">
+                    <div className={styles.footer}>
                       <div className="price"><b>{money(product.price)}</b>{product.compare_at_price && <del>{money(product.compare_at_price)}</del>}</div>
-                      <span className="viewLink">View guide <ArrowRight size={15} /></span>
+                      <span className={styles.view}>View guide <ArrowRight size={15} /></span>
                     </div>
                   </div>
                 </Link>
@@ -117,7 +118,7 @@ export default async function Ebooks({ searchParams }) {
             })}
           </div>
         ) : (
-          <div className="empty catalogEmpty">
+          <div className={`empty ${styles.empty}`}>
             <Search size={34} />
             <h3>No e-books found</h3>
             <p>Try a different title or browse all categories.</p>
