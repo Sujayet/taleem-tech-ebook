@@ -1,11 +1,177 @@
 'use client'
+
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { BookOpen, ShoppingCart, User, LogOut, Menu, X } from 'lucide-react'
+import {
+  BookOpen,
+  ShoppingCart,
+  User,
+  UserPlus,
+  LogOut,
+  Menu,
+  X
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-export default function Header(){
- const [user,setUser]=useState(null),[open,setOpen]=useState(false),[count,setCount]=useState(0)
- useEffect(()=>{supabase.auth.getUser().then(({data})=>setUser(data.user||null)); const {data}=supabase.auth.onAuthStateChange((_,s)=>setUser(s?.user||null)); const sync=()=>setCount(JSON.parse(localStorage.getItem('tt_cart')||'[]').reduce((a,x)=>a+x.quantity,0)); sync(); window.addEventListener('storage',sync); return()=>{data.subscription.unsubscribe();window.removeEventListener('storage',sync)}} ,[])
- const logout=async()=>{await supabase.auth.signOut();location.href='/'}
- return <header className="header"><div className="container nav"><Link className="brand" href="/"><span className="logo">TT</span><span><b>Taleem Tech</b><small>Computer Training Centre</small></span></Link><button className="menu" onClick={()=>setOpen(!open)}>{open?<X/>:<Menu/>}</button><nav className={open?'show':''}><Link href="/">Home</Link><Link href="/ebooks">E-Books</Link><Link href="/library">My Library</Link><Link href="/orders">Orders</Link><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link className="cart" href="/cart"><ShoppingCart size={18}/>{count>0&&<i>{count}</i>}</Link>{user?<button className="logout" onClick={logout}><LogOut size={16}/> Logout</button>:<Link className="login" href="/login"><User size={16}/> Login</Link>}</nav></div></header>
+
+export default function Header() {
+  const [user, setUser] = useState(null)
+  const [open, setOpen] = useState(false)
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user || null)
+    })
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null)
+    })
+
+    const syncCart = () => {
+      try {
+        const cart = JSON.parse(
+          localStorage.getItem('tt_cart') || '[]'
+        )
+
+        setCount(
+          cart.reduce(
+            (total, item) => total + (Number(item.quantity) || 0),
+            0
+          )
+        )
+      } catch {
+        setCount(0)
+      }
+    }
+
+    syncCart()
+
+    window.addEventListener('storage', syncCart)
+
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('storage', syncCart)
+    }
+  }, [])
+
+  const closeMenu = () => setOpen(false)
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    closeMenu()
+    window.location.href = '/'
+  }
+
+  return (
+    <header className="header">
+      <div className="container nav">
+
+        {/* Brand */}
+        <Link
+          href="/"
+          className="brand"
+          onClick={closeMenu}
+        >
+          <span className="logo">
+            <BookOpen size={20} />
+          </span>
+
+          <span>
+            <b>Taleem Tech</b>
+            <small>Computer Training Centre</small>
+          </span>
+        </Link>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="menu"
+          aria-label="Toggle navigation"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* Navigation */}
+        <nav className={open ? 'show' : ''}>
+
+          <Link href="/" onClick={closeMenu}>
+            Home
+          </Link>
+
+          <Link href="/ebooks" onClick={closeMenu}>
+            E-Books
+          </Link>
+
+          <Link href="/library" onClick={closeMenu}>
+            My Library
+          </Link>
+
+          <Link href="/orders" onClick={closeMenu}>
+            Orders
+          </Link>
+
+          <Link href="/about" onClick={closeMenu}>
+            About
+          </Link>
+
+          <Link href="/contact" onClick={closeMenu}>
+            Contact
+          </Link>
+
+          {/* Cart */}
+          <Link
+            href="/cart"
+            className="cart"
+            aria-label={`Shopping cart${
+              count ? ` with ${count} items` : ''
+            }`}
+            onClick={closeMenu}
+          >
+            <ShoppingCart size={18} />
+
+            {count > 0 && (
+              <i>{count}</i>
+            )}
+          </Link>
+
+          {/* Authentication */}
+          {user ? (
+            <button
+              className="logout"
+              onClick={logout}
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          ) : (
+            <div className="authActions">
+
+              <Link
+                href="/login"
+                className="login"
+                onClick={closeMenu}
+              >
+                <User size={16} />
+                Login
+              </Link>
+
+              <Link
+                href="/register"
+                className="register"
+                onClick={closeMenu}
+              >
+                <UserPlus size={16} />
+                Register
+              </Link>
+
+            </div>
+          )}
+
+        </nav>
+      </div>
+    </header>
+  )
 }
