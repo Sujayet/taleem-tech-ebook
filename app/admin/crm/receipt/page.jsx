@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Loader2, Printer } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
@@ -11,7 +11,7 @@ const centreId = 'NCEBc2503150'
 const centreEmail = 'sujayetmd1@gmail.com'
 const centrePhone = '9836968835'
 
-export default function ReceiptPage(){
+function ReceiptContent(){
   const params=useSearchParams(), id=params.get('id')
   const [loading,setLoading]=useState(true),[error,setError]=useState(''),[payment,setPayment]=useState(null)
   useEffect(()=>{(async()=>{
@@ -35,4 +35,12 @@ export default function ReceiptPage(){
       <footer>This is a computer generated fee receipt. Please obtain physical signature and centre seal after printing.</footer>
     </section>
   </main>
+}
+
+function ReceiptFallback(){
+  return <main className={styles.state}><Loader2 className={styles.spin}/><p>Preparing receipt…</p></main>
+}
+
+export default function ReceiptPage(){
+  return <Suspense fallback={<ReceiptFallback/>}><ReceiptContent/></Suspense>
 }
