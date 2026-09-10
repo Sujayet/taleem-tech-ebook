@@ -1,12 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, Mail, Phone, UserRound } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import AuthStyles from '@/components/AuthStyles'
 
 export default function Register() {
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') || '/library'
+  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/library'
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -37,10 +41,10 @@ export default function Register() {
       return
     }
     if (data.session) {
-      window.location.href = '/library'
+      window.location.href = safeNext
       return
     }
-    setMsg('Account created successfully. Please check your email to confirm your account, then sign in.')
+    setMsg('Account created successfully. Please check your email to confirm your account, then sign in to continue.')
     setBusy(false)
   }
 
@@ -72,7 +76,7 @@ export default function Register() {
               <button disabled={busy} className="btn primary full authSubmit" type="submit">{busy ? <><Loader2 size={17} className="spin" /> Creating account…</> : <>Create account <ArrowRight size={17} /></>}</button>
             </form>
             <div className="authDivider"><span>Already registered?</span></div>
-            <Link href="/login" className="btn authRegisterLink">Sign in instead</Link>
+            <Link href={`/login?next=${encodeURIComponent(safeNext)}`} className="btn authRegisterLink">Sign in instead</Link>
           </div>
         </div>
       </section>
