@@ -1,16 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, LockKeyhole, Mail, Phone, UserRound } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import AuthStyles from '@/components/AuthStyles'
 
 export default function Register() {
-  const searchParams = useSearchParams()
-  const next = searchParams.get('next') || '/library'
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/library'
+  const [safeNext, setSafeNext] = useState('/library')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -19,6 +16,11 @@ export default function Register() {
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get('next') || '/library'
+    if (next.startsWith('/') && !next.startsWith('//')) setSafeNext(next)
+  }, [])
 
   async function submit(e) {
     e.preventDefault()
