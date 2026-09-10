@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, CheckCircle, Download, FileText, Shiel
 import { notFound } from 'next/navigation'
 import { supabase, money } from '@/lib/supabase'
 import CartButton from '@/components/CartButton'
+import ProductGallery from '@/components/ProductGallery'
 import styles from './product.module.css'
 
 export const revalidate = 30
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Product({ params }) {
-  const { data: product } = await supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,pages,featured,category_id,categories(name)').eq('slug', params.slug).eq('active', true).single()
+  const { data: product } = await supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,image_urls,pages,featured,category_id,categories(name)').eq('slug', params.slug).eq('active', true).single()
   if (!product) notFound()
 
   let relatedQuery = supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,pages,categories(name)').eq('active', true).neq('id', product.id).limit(3)
@@ -37,9 +38,7 @@ export default async function Product({ params }) {
 
         <section className={styles.layout}>
           <div className={styles.coverWrap}>
-            <div className={styles.cover}>
-              {product.cover_url ? <img src={product.cover_url} alt={`${product.title} cover`} /> : <div className={styles.fallback}><BookOpen size={72} /><span>Taleem Tech E-Book</span></div>}
-            </div>
+            <ProductGallery title={product.title} coverUrl={product.cover_url} imageUrls={product.image_urls} />
             <Link href="/ebooks" className={styles.back}><ArrowLeft size={15} /> Back to E-Books</Link>
           </div>
 
