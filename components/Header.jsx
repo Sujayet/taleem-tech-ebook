@@ -12,18 +12,41 @@ export default function Header() {
   const [open, setOpen] = useState(false)
   const [count, setCount] = useState(0)
 
-  async function loadUser() {
-    const { data } = await supabase.auth.getUser()
-    const currentUser = data?.user || null
-    setUser(currentUser)
-    if (!currentUser) return setRole('customer')
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUser.id).maybeSingle()
+  async function loadProfile(userId) {
+    if (!userId) {
+      setRole('customer')
+      return
+    }
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
     setRole(profile?.role || 'customer')
   }
 
+  async function loadInitialUser() {
+    const { data, error } = await supabase.auth.getUser()
+    if (error) {
+      setUser(null)
+      setRole('customer')
+      return
+    }
+    const currentUser = data?.user || null
+    setUser(currentUser)
+    await loadProfile(currentUser?.id)
+  }
+
   useEffect(() => {
-    loadUser()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => loadUser())
+    let mounted = true
+    loadInitialUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
+      // Keep the auth callback lightweight. Supabase can deadlock when another
+      // Supabase request is awaited directly inside onAuthStateChange.
+      const currentUser = session?.user || null
+      setUser(currentUser)
+      setRole(currentUser ? 'customer' : 'customer')
+      if (currentUser) setTimeout(() => { if (mounted) loadProfile(currentUser.id) }, 0)
+    })
+
     const syncCart = () => {
       try {
         const cart = JSON.parse(localStorage.getItem('tt_cart') || '[]')
@@ -32,11 +55,19 @@ export default function Header() {
     }
     syncCart()
     window.addEventListener('storage', syncCart)
-    return () => { subscription.unsubscribe(); window.removeEventListener('storage', syncCart) }
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+      window.removeEventListener('storage', syncCart)
+    }
   }, [])
 
   const closeMenu = () => setOpen(false)
-  const logout = async () => { await supabase.auth.signOut(); closeMenu(); window.location.href = '/' }
+  const logout = async () => {
+    await supabase.auth.signOut()
+    closeMenu()
+    window.location.href = '/'
+  }
 
   return (
     <header className={styles.header}>
