@@ -1,12 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, ShieldCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import AuthStyles from '@/components/AuthStyles'
 
 export default function Login() {
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') || '/library'
+  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/library'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -23,7 +27,7 @@ export default function Login() {
       setBusy(false)
       return
     }
-    window.location.href = '/library'
+    window.location.href = safeNext
   }
 
   return (
@@ -50,7 +54,7 @@ export default function Login() {
               <button disabled={busy} className="btn primary full authSubmit" type="submit">{busy ? <><Loader2 size={17} className="spin" /> Signing in…</> : <>Sign in <ArrowRight size={17} /></>}</button>
             </form>
             <div className="authDivider"><span>New to Taleem Tech?</span></div>
-            <Link href="/register" className="btn authRegisterLink">Create an account</Link>
+            <Link href={`/register?next=${encodeURIComponent(safeNext)}`} className="btn authRegisterLink">Create an account</Link>
           </div>
         </div>
       </section>
