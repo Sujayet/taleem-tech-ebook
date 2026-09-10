@@ -28,22 +28,13 @@ export default function Header() {
       setRole('customer')
       return
     }
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', currentUser.id)
-      .maybeSingle()
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUser.id).maybeSingle()
     setRole(profile?.role || 'customer')
   }
 
   useEffect(() => {
     loadUser()
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange(() => {
-      loadUser()
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => loadUser())
 
     const syncCart = () => {
       try {
@@ -53,10 +44,8 @@ export default function Header() {
         setCount(0)
       }
     }
-
     syncCart()
     window.addEventListener('storage', syncCart)
-
     return () => {
       subscription.unsubscribe()
       window.removeEventListener('storage', syncCart)
@@ -70,8 +59,6 @@ export default function Header() {
     closeMenu()
     window.location.href = '/'
   }
-
-  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Account'
 
   return (
     <header className="header">
@@ -99,20 +86,17 @@ export default function Header() {
           </Link>
 
           {user ? (
-            <div className="accountActions">
-              <Link href="/profile" className="profileNav" onClick={closeMenu} title={`Open ${displayName}'s profile`}>
-                <User size={16} />
-                <span>Profile</span>
+            <div className="authActions">
+              <Link href="/profile" className="login" onClick={closeMenu}>
+                <User size={16} /> Profile
               </Link>
               {role === 'admin' && (
-                <Link href="/admin" className="adminNav" onClick={closeMenu} title="Open Admin Centre">
-                  <ShieldCheck size={16} />
-                  <span>Admin</span>
+                <Link href="/admin" className="register" onClick={closeMenu}>
+                  <ShieldCheck size={16} /> Admin
                 </Link>
               )}
               <button className="logout" onClick={logout}>
-                <LogOut size={16} />
-                <span>Logout</span>
+                <LogOut size={16} /> Logout
               </button>
             </div>
           ) : (
