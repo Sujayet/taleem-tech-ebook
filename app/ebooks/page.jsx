@@ -1,11 +1,13 @@
 import Link from 'next/link'
-import { ArrowRight, BookOpen, CheckCircle2, Search, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react'
 import { supabase, money } from '@/lib/supabase'
 import styles from './ebooks.module.css'
 
+const firstValue = (value) => Array.isArray(value) ? value[0] : value
+
 export default async function Ebooks({ searchParams }) {
-  const q = searchParams?.q?.trim() || ''
-  const cat = searchParams?.category || ''
+  const q = firstValue(searchParams?.q)?.trim() || ''
+  const cat = firstValue(searchParams?.category) || ''
 
   let query = supabase
     .from('products')
@@ -25,6 +27,14 @@ export default async function Ebooks({ searchParams }) {
   const getCategory = (product) => Array.isArray(product.categories) ? product.categories[0] : product.categories
   const shown = cat ? books.filter((product) => getCategory(product)?.slug === cat) : books
   const activeCategory = categories.find((category) => category.slug === cat)
+  const filtersApplied = Boolean(q || cat)
+  const catalogueHref = (category = cat, search = q) => {
+    const params = new URLSearchParams()
+    if (search) params.set('q', search)
+    if (category) params.set('category', category)
+    const queryString = params.toString()
+    return queryString ? `/ebooks?${queryString}` : '/ebooks'
+  }
 
   return (
     <section className={`${styles.page} section`}>
@@ -45,6 +55,7 @@ export default async function Ebooks({ searchParams }) {
             <span>EXPLORE THE LIBRARY</span>
             <strong>{books.length} {books.length === 1 ? 'e-book' : 'e-books'}</strong>
             <p>Choose a topic, open the guide, and start learning today.</p>
+            <div className={styles.heroCardFooter}><span>Curated for beginners</span><ArrowUpRight size={17} /></div>
           </div>
         </div>
 
@@ -52,7 +63,7 @@ export default async function Ebooks({ searchParams }) {
           <div>
             <span className={styles.eyebrow}>BROWSE COLLECTION</span>
             <h2>{activeCategory ? activeCategory.name : 'All E-Books'}</h2>
-            <p>{shown.length} {shown.length === 1 ? 'title' : 'titles'} available</p>
+            <p>{shown.length} {shown.length === 1 ? 'title' : 'titles'} available{q ? ` for “${q}”` : ''}</p>
           </div>
           <form className={styles.searchForm} action="/ebooks">
             <div className="search">
@@ -69,12 +80,19 @@ export default async function Ebooks({ searchParams }) {
 
         {categories.length > 0 && (
           <div className={styles.chips} aria-label="E-book categories">
-            <Link className={!cat ? styles.active : ''} href="/ebooks">All</Link>
+            <Link className={!cat ? styles.active : ''} href={catalogueHref('')}>All</Link>
             {categories.map((category) => (
-              <Link key={category.id} className={cat === category.slug ? styles.active : ''} href={`/ebooks?category=${encodeURIComponent(category.slug)}`}>
+              <Link key={category.id} className={cat === category.slug ? styles.active : ''} href={catalogueHref(category.slug)}>
                 {category.name}
               </Link>
             ))}
+          </div>
+        )}
+
+        {filtersApplied && !productsError && (
+          <div className={styles.resultsBar} aria-live="polite">
+            <span><strong>{shown.length}</strong> matching {shown.length === 1 ? 'guide' : 'guides'}</span>
+            <Link href="/ebooks"><X size={15} /> Clear filters</Link>
           </div>
         )}
 
