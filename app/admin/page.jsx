@@ -2,12 +2,11 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { AlertCircle, BookOpen, CheckCircle2, Edit3, Eye, EyeOff, Loader2, Plus, RefreshCw, Search, ShieldCheck, Trash2, X } from 'lucide-react'
+import { AlertCircle, BookOpen, CheckCircle2, ClipboardList, Edit3, Eye, EyeOff, Loader2, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X } from 'lucide-react'
 import { supabase, money } from '@/lib/supabase'
 import styles from './admin.module.css'
 
 const emptyForm = { title: '', slug: '', description: '', price: '', compare_at_price: '', category_id: '', pages: '', cover_url: '', active: true, featured: false }
-
 const getCategory = (product) => Array.isArray(product.categories) ? product.categories[0] : product.categories
 
 export default function Admin() {
@@ -31,27 +30,14 @@ export default function Admin() {
     const { data: auth, error: authError } = await supabase.auth.getUser()
     const currentUser = auth?.user || null
     setUser(currentUser)
-    if (authError || !currentUser) {
-      window.location.href = '/login?next=/admin'
-      return
-    }
-
+    if (authError || !currentUser) { window.location.href = '/login?next=/admin'; return }
     const { data: p, error: profileError } = await supabase.from('profiles').select('full_name,role').eq('id', currentUser.id).single()
-    if (profileError || p?.role !== 'admin') {
-      setProfile(p || null)
-      setError('Admin access required.')
-      setLoading(false)
-      setRefreshing(false)
-      return
-    }
-
+    if (profileError || p?.role !== 'admin') { setProfile(p || null); setError('Admin access required.'); setLoading(false); setRefreshing(false); return }
     setProfile(p)
-
     const [{ data, error: productError }, { data: categoryData, error: categoryError }] = await Promise.all([
       supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,pages,featured,category_id,active,created_at,categories(id,name,slug)').order('created_at', { ascending: false }),
       supabase.from('categories').select('id,name,slug').order('name'),
     ])
-
     if (productError) setError(productError.message || 'We could not load the product catalogue.')
     else if (categoryError) setError(categoryError.message || 'We could not load product categories.')
     setProducts(data || [])
@@ -109,7 +95,7 @@ export default function Admin() {
 
   return <section className={`section ${styles.page}`}>
     <div className="container">
-      <div className={styles.header}><div><span className="eyebrow">ADMIN CENTRE</span><h1>E-Book Management</h1><p className="muted">Manage your catalogue, pricing, visibility and featured books.</p></div><div className={styles.headerActions}><button className={styles.refresh} onClick={() => loadAdmin(true)} disabled={refreshing}><RefreshCw size={16} className={refreshing ? styles.spin : ''}/> {refreshing ? 'Refreshing…' : 'Refresh'}</button><button className="btn primary" onClick={openNew}><Plus size={17}/> Add E-Book</button></div></div>
+      <div className={styles.header}><div><span className="eyebrow">ADMIN CENTRE</span><h1>E-Book Management</h1><p className="muted">Manage your catalogue, pricing, visibility and featured books.</p></div><div className={styles.headerActions}><Link className={styles.refresh} href="/admin/orders"><Users size={16}/> Orders & Customers</Link><button className={styles.refresh} onClick={() => loadAdmin(true)} disabled={refreshing}><RefreshCw size={16} className={refreshing ? styles.spin : ''}/> {refreshing ? 'Refreshing…' : 'Refresh'}</button><button className="btn primary" onClick={openNew}><Plus size={17}/> Add E-Book</button></div></div>
       {error && <div className={`error ${styles.message}`} role="alert"><AlertCircle size={16}/><span>{error}</span></div>}
       {notice && <div className={styles.notice} role="status"><CheckCircle2 size={16}/><span>{notice}</span></div>}
       <div className={styles.stats}><div><BookOpen size={19}/><div><b>{products.length}</b><small>Total e-books</small></div></div><div><Eye size={19}/><div><b>{activeCount}</b><small>Published</small></div></div><div><EyeOff size={19}/><div><b>{products.length - activeCount}</b><small>Unpublished</small></div></div><div><CheckCircle2 size={19}/><div><b>{featuredCount}</b><small>Featured</small></div></div></div>
