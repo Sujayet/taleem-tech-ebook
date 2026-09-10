@@ -1,17 +1,18 @@
 import Link from 'next/link'
-import { ArrowRight, BookOpen, CheckCircle2, Search, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, BookOpen, CheckCircle2, CircleX, Search, ShieldCheck, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { supabase, money } from '@/lib/supabase'
 import styles from './ebooks.module.css'
 
 export default async function Ebooks({ searchParams }) {
-  const q = searchParams?.q?.trim() || ''
-  const cat = searchParams?.category || ''
+  const q = typeof searchParams?.q === 'string' ? searchParams.q.trim() : ''
+  const cat = typeof searchParams?.category === 'string' ? searchParams.category : ''
+  const sort = searchParams?.sort === 'price-asc' || searchParams?.sort === 'price-desc' ? searchParams.sort : 'newest'
 
   let query = supabase
     .from('products')
     .select('id,title,slug,description,price,compare_at_price,cover_url,pages,categories(id,name,slug)')
     .eq('active', true)
-    .order('created_at', { ascending: false })
+    .order(sort === 'price-asc' || sort === 'price-desc' ? 'price' : 'created_at', { ascending: sort === 'price-asc' })
 
   if (q) query = query.ilike('title', `%${q}%`)
 
@@ -25,6 +26,17 @@ export default async function Ebooks({ searchParams }) {
   const getCategory = (product) => Array.isArray(product.categories) ? product.categories[0] : product.categories
   const shown = cat ? books.filter((product) => getCategory(product)?.slug === cat) : books
   const activeCategory = categories.find((category) => category.slug === cat)
+  const searchLabel = q ? ` for “${q}”` : ''
+  const hasFilters = Boolean(q || cat || sort !== 'newest')
+
+  const categoryHref = (categorySlug = '') => {
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    if (categorySlug) params.set('category', categorySlug)
+    if (sort !== 'newest') params.set('sort', sort)
+    const queryString = params.toString()
+    return queryString ? `/ebooks?${queryString}` : '/ebooks'
+  }
 
   return (
     <section className={`${styles.page} section`}>
@@ -41,10 +53,12 @@ export default async function Ebooks({ searchParams }) {
             </div>
           </div>
           <div className={styles.heroCard}>
+            <div className={styles.cardGlow} />
             <div className={styles.heroIcon}><BookOpen size={28} /></div>
             <span>EXPLORE THE LIBRARY</span>
             <strong>{books.length} {books.length === 1 ? 'e-book' : 'e-books'}</strong>
             <p>Choose a topic, open the guide, and start learning today.</p>
+            <div className={styles.secureNote}><ShieldCheck size={15} /> Secure digital learning</div>
           </div>
         </div>
 
@@ -52,7 +66,7 @@ export default async function Ebooks({ searchParams }) {
           <div>
             <span className={styles.eyebrow}>BROWSE COLLECTION</span>
             <h2>{activeCategory ? activeCategory.name : 'All E-Books'}</h2>
-            <p>{shown.length} {shown.length === 1 ? 'title' : 'titles'} available</p>
+            <p>{shown.length} {shown.length === 1 ? 'title' : 'titles'} available{searchLabel}</p>
           </div>
           <form className={styles.searchForm} action="/ebooks">
             <div className="search">
@@ -63,18 +77,30 @@ export default async function Ebooks({ searchParams }) {
               <option value="">All categories</option>
               {categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
             </select>
+            <select name="sort" defaultValue={sort} aria-label="Sort e-books">
+              <option value="newest">Newest first</option>
+              <option value="price-asc">Price: low to high</option>
+              <option value="price-desc">Price: high to low</option>
+            </select>
             <button className="btn primary" type="submit"><SlidersHorizontal size={16} /> Search</button>
           </form>
         </div>
 
         {categories.length > 0 && (
           <div className={styles.chips} aria-label="E-book categories">
-            <Link className={!cat ? styles.active : ''} href="/ebooks">All</Link>
+            <Link className={!cat ? styles.active : ''} href={categoryHref()}>All</Link>
             {categories.map((category) => (
-              <Link key={category.id} className={cat === category.slug ? styles.active : ''} href={`/ebooks?category=${encodeURIComponent(category.slug)}`}>
+              <Link key={category.id} className={cat === category.slug ? styles.active : ''} href={categoryHref(category.slug)}>
                 {category.name}
               </Link>
             ))}
+          </div>
+        )}
+
+        {hasFilters && (
+          <div className={styles.filterSummary} role="status">
+            <span>Showing {shown.length} {shown.length === 1 ? 'guide' : 'guides'}{searchLabel}{activeCategory ? ` in ${activeCategory.name}` : ''}.</span>
+            <Link href="/ebooks"><CircleX size={15} /> Clear filters</Link>
           </div>
         )}
 
