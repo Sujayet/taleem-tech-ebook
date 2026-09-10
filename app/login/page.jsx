@@ -1,21 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, ShieldCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import AuthStyles from '@/components/AuthStyles'
 
 export default function Login() {
-  const searchParams = useSearchParams()
-  const next = searchParams.get('next') || '/library'
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/library'
+  const [safeNext, setSafeNext] = useState('/library')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get('next') || '/library'
+    if (next.startsWith('/') && !next.startsWith('//')) setSafeNext(next)
+  }, [])
 
   async function submit(e) {
     e.preventDefault()
