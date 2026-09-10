@@ -18,8 +18,8 @@ export default async function Product({ params }) {
   const { data: product, error: productError } = await supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,pages,featured,category_id,categories(name)').eq('slug', params.slug).eq('active', true).single()
   if (productError || !product) notFound()
 
-  const { data: galleryRow } = await supabase.from('products').select('image_urls').eq('id', product.id).maybeSingle()
-  const imageUrls = Array.isArray(galleryRow?.image_urls) ? galleryRow.image_urls : []
+  const { data: galleryRow, error: galleryError } = await supabase.from('products').select('image_urls').eq('id', product.id).maybeSingle()
+  const imageUrls = !galleryError && Array.isArray(galleryRow?.image_urls) ? galleryRow.image_urls : []
 
   let relatedQuery = supabase.from('products').select('id,title,slug,description,price,compare_at_price,cover_url,pages,categories(name)').eq('active', true).neq('id', product.id).limit(3)
   if (product.category_id) relatedQuery = relatedQuery.eq('category_id', product.category_id)
