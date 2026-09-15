@@ -72,7 +72,7 @@ export default function Header() {
       <div className={styles.nav}>
         <Link href="/" className={styles.brand} onClick={closeMenu}>
           <span className={styles.logo}><BookOpen size={20} /></span>
-          <span className={styles.brandText}><b>Taleem Tech</b><small>Digital Learning Store</small></span>
+          <span className={styles.brandText}><b>Taleem Tech</b><small>Digital Products Store</small></span>
         </Link>
 
         <button className={styles.menu} aria-label="Toggle navigation" aria-expanded={open} onClick={() => setOpen(!open)}>
@@ -81,7 +81,7 @@ export default function Header() {
 
         <nav className={`${styles.navLinks} ${open ? styles.open : ''}`}>
           <Link href="/" onClick={closeMenu}>Home</Link>
-          <Link href="/ebooks" onClick={closeMenu}>E-Books</Link>
+          <Link href="/ebooks" onClick={closeMenu}>Digital Products</Link>
           <Link href="/discover" onClick={closeMenu}>Discover</Link>
           <Link href="/about" onClick={closeMenu}>About</Link>
           <Link href="/contact" onClick={closeMenu}>Contact</Link>
