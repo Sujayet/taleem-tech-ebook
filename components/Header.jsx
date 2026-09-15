@@ -39,8 +39,6 @@ export default function Header() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
-      // Keep the auth callback lightweight. Supabase can deadlock when another
-      // Supabase request is awaited directly inside onAuthStateChange.
       const currentUser = session?.user || null
       setUser(currentUser)
       setRole(currentUser ? 'customer' : 'customer')
@@ -84,6 +82,7 @@ export default function Header() {
         <nav className={`${styles.navLinks} ${open ? styles.open : ''}`}>
           <Link href="/" onClick={closeMenu}>Home</Link>
           <Link href="/ebooks" onClick={closeMenu}>E-Books</Link>
+          <Link href="/discover" onClick={closeMenu}>Discover</Link>
           <Link href="/about" onClick={closeMenu}>About</Link>
           <Link href="/contact" onClick={closeMenu}>Contact</Link>
           <Link href="/library" onClick={closeMenu}>My Library</Link>
